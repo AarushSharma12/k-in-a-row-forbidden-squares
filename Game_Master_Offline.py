@@ -1,14 +1,7 @@
 """GameMasterOffline.py based on GameMaster.py
 
- Updated Jan. 30, 2025. Previously updated Nov. 17, 2024.
- See the test function at the end for how to customize
- the runs: choice of games and agents.
-
-(C) University of Washington and S. Tanimoto, 2025.
-
 Note that this Game Master is not enforcing the time limits
-on moves.  The time limit will typically be important in
-tournament play.
+on moves.
 
 """
 

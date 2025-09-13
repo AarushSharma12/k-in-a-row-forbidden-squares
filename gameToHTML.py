@@ -42,10 +42,10 @@ def stateToHTML(state, finished=False):
     for row in board:
         html += "<tr>"
         for col in row:
-            img = "gray32.png"
-            if col=='X': img = "X32.png"
-            elif col=='O': img = "O32.png"
-            elif col=="-": img = "black32.png"
+            img = "img/gray32.png"
+            if col=='X': img = "img/X32.png"
+            elif col=='O': img = "img/O32.png"
+            elif col=="-": img = "img/black32.png"
             html += "<td><img src=\"" + img + "\"></td>"
         html += "</tr>\n"
     html += "</table><br>\n"
