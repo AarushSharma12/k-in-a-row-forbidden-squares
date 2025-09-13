@@ -1,13 +1,13 @@
 '''gameToHTML.py
 
 '''
-f = None
+F = None
 def startHTML(nickName1, nickName2, gameType, round=1):
     # Create a filename.
     fn = clean(nickName1)+'-vs-'+clean(nickName2)+'-in-'+clean(gameType)+'-round-'+str(round)+'.html'
-    # To be added: Check for existing file by this name and create a new variation of it.
     global F
-    try: F = open(fn, "w");
+    try:
+        F = open(fn, "w")
     except:
         print("Could not open the file "+fn+" for the game's HTML page.")
         return
@@ -30,9 +30,8 @@ def endHTML():
     
 def clean(name):
     import re
-    #print("in clean, name is", name)
     new_name = re.sub(' ', '-', name)
-    new_name = re.sub('[^a-zA-Z10-9\\-]', '', new_name)
+    new_name = re.sub('[^a-zA-Z0-9\\-]', '', new_name)
     return new_name
 
 def stateToHTML(state, finished=False):
@@ -47,9 +46,9 @@ def stateToHTML(state, finished=False):
             if col=='X': img = "X32.png"
             elif col=='O': img = "O32.png"
             elif col=="-": img = "black32.png"
-            html += "<td><img src=" + img + "></td>"
+            html += "<td><img src=\"" + img + "\"></td>"
         html += "</tr>\n"
     html += "</table><br>\n"
     if not finished: html += "<h3>"+who+" to move.</h3>\n"
     F.write(html)
-    
+

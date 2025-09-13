@@ -377,12 +377,22 @@ class OurAgent(KAgent):
         """
         Returns True if the state is terminal (a win or a draw), otherwise False.
         """
-        for r in range(len(state.board)):
-            for c in range(len(state.board[0])):
-                if winTesterForK(state, (r, c), self.current_game_type.k) != "No win":
-                    return True
-        for row in state.board:
-            if " " in row:
+        k = self.current_game_type.k if self.current_game_type else None
+        if k is None and hasattr(state, 'k'):
+            k = state.k
+        if k is None:
+            return False
+        board = state.board
+        H = len(board)
+        W = len(board[0]) if H else 0
+        for r in range(H):
+            for c in range(W):
+                if board[r][c] in ('X', 'O'):
+                    if winTesterForK(state, (r, c), k) != "No win":
+                        return True
+        # draw if no spaces left
+        for row in board:
+            if ' ' in row:
                 return False
         return True
 

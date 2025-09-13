@@ -7,13 +7,6 @@ Base class to be subclassed to create an agent for playing
 Paul G. Allen School of Computer Science and Engineering,
 University of Washington
 
-THIS IS A TEMPLATE WITH STUBS FOR THE REQUIRED FUNCTIONS.
-
-IMPORT IT INTO YOUR OWN AGENT MODULE AND SUBCLASS KAgent.
-OVERRIDE METHODS AS NEEDED TO CREATE YOUR OWN AGENT.
-
-YOU CAN PUT INTO YOUR MODULE WHATEVER ADDITIONAL FUNCTIONS 
-YOU NEED IN ORDER TO ACHIEVE YOUR AGENT IMPLEMENTATION.
 
 '''
 
@@ -64,16 +57,13 @@ class KAgent:
                                           # or something simple and quick to compute
                                           # and do not import any LLM or special APIs.
                                           # During the tournament, this will be False..
-       if utterances_matter:
-           pass
-           # Optionally, import your LLM API here.
-           # Then you can use it to help create utterances.
-
-       # Write code to save the relevant information in variables
-       # local to this instance of the agent.
-       # Game-type info can be in global variables.
-       print("Change this to return 'OK' when ready to test the method.")
-       return "Not-OK"
+       # Save relevant information for this agent instance.
+        self.current_game_type = game_type
+        self.playing = what_side_to_play
+        self.opponent_nickname = opponent_nickname
+        self.expected_time_per_move = expected_time_per_move
+        self.utterances_matter = utterances_matter
+        return "OK"
                 
     def make_move(self, current_state, current_remark, time_limit=1000,
                   autograding=False, use_alpha_beta=True,
@@ -96,13 +86,11 @@ class KAgent:
         if not autograding:
             return [[a_default_move, new_state], new_remark]
         
-
         stats = [self.alpha_beta_cutoffs_this_turn,
                  self.num_static_evals_this_turn,
                  self.zobrist_table_num_entries_this_turn,
-                 self.zobristt_table_num_hits_this_turn]
+                 self.zobrist_table_num_hits_this_turn]
         
-
         return [[a_default_move, new_state]+stats, new_remark]
 
     # The main adversarial search function:

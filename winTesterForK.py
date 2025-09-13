@@ -9,7 +9,6 @@
 
 def winTesterForK(s, move, k):
     board = s.board
-    who = s.whose_move
     moveI, moveJ = move
     whoWent = board[moveI][moveJ]
     if not whoWent in ['X', 'O']:
