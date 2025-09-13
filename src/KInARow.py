@@ -35,6 +35,8 @@ class OurAgent(KAgent):
         self.voice_info = {"Chrome": 10, "Firefox": 2, "other": 0}
         self.playing = None  # "X" or "O", set in prepare()
         self.current_game_type = None
+        self.llm_enabled = False # Controls if the LLM API can be used.
+        self.gemini_model = None # To hold the initialized Gemini model.
 
         # Dialog/instrumentation tracking.
         self.turn_count = 0
@@ -71,9 +73,11 @@ class OurAgent(KAgent):
         opponent_nickname,
         expected_time_per_move=0.1,
         utterances_matter=True,
+        apis_ok=True, # New parameter to allow external APIs.
     ):
         self.current_game_type = game_type
         self.playing = what_side_to_play
+        self.llm_enabled = apis_ok
         self.init_zobrist()
         return "OK"
 
@@ -281,76 +285,100 @@ class OurAgent(KAgent):
 
         return best_value
 
+    def _generate_llm_utterance(self, best_move, best_value, opponent_remark):
+        """Generates an utterance using the Gemini LLM if available."""
+        if not self.llm_enabled:
+            return None
+
+        try:
+            # Conditional import to avoid issues when APIs are not allowed.
+            import google.generativeai as genai
+            from src.secrets import GOOGLE_API_KEY  # Import the key from your new file
+
+            # It's good practice to only configure this once.
+            if not self.gemini_model:
+                genai.configure(api_key=GOOGLE_API_KEY)  # Configure using the imported key
+                self.gemini_model = genai.GenerativeModel('gemini-pro')
+
+            row, col = best_move
+            
+            # Construct a detailed prompt for the LLM
+            prompt = (
+                f"You are Chaddington 'Bruh' Balding III, an over-the-top, boastful, but ultimately good-natured frat bro. "
+                f"You are playing a game of {self.current_game_type.k}-in-a-row. Your persona is paramount. Use slang like 'brah', 'dude', 'no cap', 'let's gooo', etc. "
+                f"Generate a short, in-character utterance (1-2 sentences) for your turn.\n\n"
+                f"Game Context:\n"
+                f"- Your move: Placed a piece at ({row}, {col}).\n"
+                f"- Your evaluation: The game state value is {best_value:.2f}. (A high positive value is very good for you, 'X'. A high negative value is bad.)\n"
+                f"- Opponent's last remark: \"{opponent_remark if opponent_remark else 'None'}\"\n\n"
+                f"Based on this, say something confident and funny. If your evaluation is high, be extra boastful. If it's low, be dismissive of the opponent's temporary advantage. If the opponent said something, you can react to it."
+            )
+            
+            response = self.gemini_model.generate_content(prompt)
+            return response.text.strip()
+
+        except (ImportError, Exception) as e:
+            # Add a check for FileNotFoundError in case secrets.py is missing
+            if isinstance(e, FileNotFoundError):
+                print("LLM utterance generation failed: secrets.py not found.")
+            else:
+                print(f"LLM utterance generation failed: {e}")
+            self.llm_enabled = False # Disable for future turns to avoid repeated errors.
+            return None
+
+
     def generate_utterance(self, best_move, best_value, opponent_remark, new_state):
         """
-        Generates an utterance in the voice of Chaddington “Bruh” Balding III.
-        Checks if the opponent requested an explanation or a game summary.
-        Otherwise, generates a standard move commentary.
+        Generates an utterance in character. It first checks for special commands,
+        then attempts to use an LLM if enabled, and finally falls back to a
+        rule-based system.
         """
-        row, col = best_move
-
-        # Check for special opponent commands (case-insensitive).
+        # Check for special opponent commands first (case-insensitive).
         lower_remark = opponent_remark.lower() if opponent_remark else ""
 
         if "tell me how you did that" in lower_remark:
-            # Provide detailed statistics about the last move.
-            explanation = (
-                "Alright, brah, lemme break it down for ya:\n"
-                f" - I evaluated {self.num_static_evals_this_turn} states statically.\n"
-                f" - I cut off {self.alpha_beta_cutoffs_this_turn} branches with alpha-beta.\n"
-                f" - That move took {self.last_move_time:.4f} seconds to compute.\n"
-                f" - Zobrist hashing: {self.zobrist_read_attempt_count} reads, "
-                f"{self.zobrist_hit_count} hits, and {self.zobrist_write_count} writes.\n"
-                "Straight up, that's how I roll, dude."
+            return (
+                "Aight, brah, you wanna see the stats? No cap. Here's the breakdown:\n"
+                f"- Static evaluations: I ran the numbers on {self.num_static_evals_this_turn} board states.\n"
+                f"- Alpha-Beta Pruning: Saved time with {self.alpha_beta_cutoffs_this_turn} cutoffs. That's, like, peak efficiency.\n"
+                f"- Zobrist Hashing: My transposition table had {self.zobrist_hit_count} hits out of {self.zobrist_read_attempt_count} reads. Stored {self.zobrist_write_count} new states.\n"
+                f"- Total Time: The whole thing took me {self.last_move_time:.4f} seconds. Let's gooo!"
             )
-            return explanation
 
         if "what's your take on the game so far" in lower_remark:
-            # Generate a narrative summary using game history and past utterances.
-            summary = "Yo, check it out, here's how this game’s been goin’:\n"
-            summary += f" - From the jump, I've made {self.turn_count} moves, and the board's seen some serious action.\n"
-            if self.game_state_history:
-                summary += " - The board’s been leanin’ in my favor—each move I drop is like a mic drop at a keg stand.\n"
+            summary = f"Yo, so you want the game recap? Bruh, it's been epic. We're {self.turn_count} turns in.\n"
+            if best_value > 100:
+                summary += "From where I'm sittin', this board is lookin' like a straight-up masterpiece painted by yours truly. Every move has been a step towards total ownage.\n"
+                prediction = "My prediction? Victory is, like, basically a done deal. Just watch, dude."
+            elif best_value < -100:
+                summary += "NGL, you've put up a bit of a fight, kinda like that one pledge who tried to out-party me. Cute.\n"
+                prediction = "You might think you're ahead, but I'm about to flip this board like a pancake. I got this."
             else:
-                summary += (
-                    " - Man, it's still early, but trust me, I'm built for wins.\n"
-                )
-            # Simple prediction based on current evaluation.
-            if best_value > 0:
-                prediction = "I’m feelin’ like victory is all mine, bro."
-            elif best_value < 0:
-                prediction = "Hmm… not gonna lie, things look a bit shaky—still, I got this, dude."
-            else:
-                prediction = "The game's on lock, but it's anyone's call right now."
-            summary += prediction
-            return summary
+                summary += "It's been a solid back-and-forth, like a good game of beer pong. Respect.\n"
+                prediction = "It's still anyone's game, but, like, c'mon... it's me. My prediction is I'm gonna clutch this win."
+            return summary + " " + prediction
 
-        # Standard move commentary in the fratccent.
-        if self.turn_count == 1:
-            return (
-                "Uhhh…buddy…*clears throat*…I'm droppin’ this disc right here, and if I'm lyin’, I'm spittin’. \n"
-                "Just like I told the TA I was the top of my class—no cap, brah."
-            )
+        # Attempt to use LLM for a dynamic, creative utterance.
+        llm_remark = self._generate_llm_utterance(best_move, best_value, opponent_remark)
+        if llm_remark:
+            return llm_remark
 
+        # Fallback to rule-based utterances if LLM is disabled or fails.
+        row, col = best_move
         utterance = f"Uhhh… yo, I’m droppin’ my piece at ({row}, {col}). "
         if best_value > 500:
-            utterance += "Whoooa, scuse me, brah…that move’s like, the sound of victory bubblin’ in my gut. "
+            utterance += "Whoooa, scuse me, brah…that move’s like, the sound of victory bubblin’ in my gut. *belch* "
         elif best_value > 100:
-            utterance += "Check it, I’m stackin’ up lines like I got more admirers at Pi Eta Epsilon than you can count. "
+            utterance += "Check it, I’m stackin’ up W's. This is, like, a masterclass in ownage. "
         elif best_value < -500:
-            utterance += (
-                "Pffft…like your defense is as weak as a flat seltzer on Taco Tuesday. "
-            )
+            utterance += "Pffft…like your defense is as weak as a flat seltzer on Taco Tuesday. You're toast, dude. "
         else:
             utterance += "Man, the board's still kinda chill—but I’m just gettin’ warmed up, ya feel? "
 
-        if opponent_remark:
-            if "block" in lower_remark or "defense" in lower_remark:
-                utterance += "Uhhh…dude, you sure about that move? My grandma always said a poor move is like a warm seltzer—flat and worthless. "
-            elif "win" in lower_remark:
-                utterance += "Brah, prepare to witness Connect 5 history, 'cause I'm about to school you! "
+        if "win" in lower_remark:
+            utterance += "You talkin' about winning? Brah, that's hilarious. "
 
-        utterance += "I am, like, the MVP of Connect 5—uh, sorry, gotta take a sip…*belch*—and victory is, like, totally mine, dude."
+        utterance += "Victory is, like, totally mine, dude."
         return utterance.strip()
 
     def apply_move(self, state, move):
