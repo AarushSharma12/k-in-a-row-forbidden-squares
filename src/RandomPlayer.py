@@ -3,8 +3,8 @@ A player for the game of K-in-a-Row (on N by M board with forbidden squares.)
 
 '''
 
-from src.agent_base import KAgent
-import src.game_types as game_types
+from agent_base import KAgent
+import game_types as game_types
 from random import randint
 GAME_TYPE = None
 
@@ -133,22 +133,26 @@ def do_move(state, i, j, o):
             news.whose_move = o
             return news
     
-UTTERANCE_BANK = ["How's that for random?",
-                  "Flip!",
-                  "Spin!",
-                  "I hope this is my lucky day!",
-                  "How's this move for high noise to signal ratio?",
-                  "Uniformly distributed. That's me.",
-                  "Maybe I'll look into Bayes' Nets in the future.",
-                  "Eenie Meenie Miney Mo.  I hope I'm getting K in a row.",
-                  "Your choice is probably more informed than mine.",
-                  "If I only had a brain.",
-                  "I'd while away the hours, playing K in a Row.",
-                  "So much fun.",
-                  "Roll the dice!",
-                  "Yes, I am on a roll -- of my virtual dice.",
-                  "randint is my cousin.",
-                  "I like to spread my influence around on the board."]
+UTTERANCE_BANK = [
+    "Tell me how you did that",
+    "What's your take on the game so far?",
+    "How's that for random?",
+    "Flip!",
+    "Spin!",
+    "I hope this is my lucky day!",
+    "How's this move for high noise to signal ratio?",
+    "Uniformly distributed. That's me.",
+    "Maybe I'll look into Bayes' Nets in the future.",
+    "Eenie Meenie Miney Mo.  I hope I'm getting K in a row.",
+    "Your choice is probably more informed than mine.",
+    "If I only had a brain.",
+    "I'd while away the hours, playing K in a Row.",
+    "So much fun.",
+    "Roll the dice!",
+    "Yes, I am on a roll -- of my virtual dice.",
+    "randint is my cousin.",
+    "I like to spread my influence around on the board.",
+]
 
 
 def test():

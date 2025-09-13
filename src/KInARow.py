@@ -9,14 +9,14 @@ with move ordering, Zobrist hashing, and two features:
   2. If the opponent says "What's your take on the game so far?", the agent tells a game narrative.
 """
 
+from agent_base import KAgent
+from game_types import State, Game_Type
+from winTesterForK import winTesterForK
+
 import math
 import random
-import copy
 import time
-
-from src.agent_base import KAgent
-from src.game_types import State, Game_Type
-from src.winTesterForK import winTesterForK
+import copy
 
 AUTHOR = "Aarush Sharma"
 
@@ -291,39 +291,41 @@ class OurAgent(KAgent):
             return None
 
         try:
-            # Conditional import to avoid issues when APIs are not allowed.
             import google.generativeai as genai
-            from src.secrets import GOOGLE_API_KEY  # Import the key from your new file
+            from app_secrets import GOOGLE_API_KEY
 
-            # It's good practice to only configure this once.
             if not self.gemini_model:
-                genai.configure(api_key=GOOGLE_API_KEY)  # Configure using the imported key
-                self.gemini_model = genai.GenerativeModel('gemini-pro')
+                genai.configure(api_key=GOOGLE_API_KEY)
+                gen_cfg = genai.GenerationConfig(
+                    temperature=0.8,
+                    top_p=0.9,
+                    max_output_tokens=60,
+                )
+                # Use a current model
+                self.gemini_model = genai.GenerativeModel(
+                    "gemini-1.5-flash",
+                    generation_config=gen_cfg,
+                    system_instruction=(
+                        "You are Chaddington 'Bruh' Balding III, a confident, funny frat-bro persona. "
+                        "Keep replies PG-13: no profanity, slurs, sexual content, or crude bodily humor. "
+                        "Be playful and competitive. Keep to 1–2 sentences, under ~25 words."
+                    ),
+                )
 
             row, col = best_move
-            
-            # Construct a detailed prompt for the LLM
             prompt = (
-                f"You are Chaddington 'Bruh' Balding III, an over-the-top, boastful, but ultimately good-natured frat bro. "
-                f"You are playing a game of {self.current_game_type.k}-in-a-row. Your persona is paramount. Use slang like 'brah', 'dude', 'no cap', 'let's gooo', etc. "
-                f"Generate a short, in-character utterance (1-2 sentences) for your turn.\n\n"
-                f"Game Context:\n"
-                f"- Your move: Placed a piece at ({row}, {col}).\n"
-                f"- Your evaluation: The game state value is {best_value:.2f}. (A high positive value is very good for you, 'X'. A high negative value is bad.)\n"
-                f"- Opponent's last remark: \"{opponent_remark if opponent_remark else 'None'}\"\n\n"
-                f"Based on this, say something confident and funny. If your evaluation is high, be extra boastful. If it's low, be dismissive of the opponent's temporary advantage. If the opponent said something, you can react to it."
+                f"Game: {self.current_game_type.k}-in-a-row.\n"
+                f"My move: ({row}, {col}). Eval: {best_value:.0f} (positive favors X, negative favors O).\n"
+                f"Opponent said: {opponent_remark or 'None'}.\n"
+                f"Respond in-character, short, confident, game-aware."
             )
-            
             response = self.gemini_model.generate_content(prompt)
-            return response.text.strip()
+            text = (response.text or "").strip().strip('"')
+            return text
 
         except (ImportError, Exception) as e:
-            # Add a check for FileNotFoundError in case secrets.py is missing
-            if isinstance(e, FileNotFoundError):
-                print("LLM utterance generation failed: secrets.py not found.")
-            else:
-                print(f"LLM utterance generation failed: {e}")
-            self.llm_enabled = False # Disable for future turns to avoid repeated errors.
+            print(f"LLM utterance generation failed: {e}")
+            self.llm_enabled = False
             return None
 
 

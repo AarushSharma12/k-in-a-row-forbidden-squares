@@ -9,11 +9,11 @@ from time import sleep
 
 USE_HTML = True
 if USE_HTML:
-    import src.gameToHTML as gameToHTML
+    import gameToHTML as gameToHTML
 
-from src.winTesterForK import winTesterForK
+from winTesterForK import winTesterForK
 
-from src.game_types import TTT, FIAR, Cassini
+from game_types import TTT, FIAR, Cassini
 
 TIME_PER_MOVE = 1.0  # In seconds
 INITIAL_STATE = TTT.initial_state
@@ -217,9 +217,9 @@ def set_wait_time(t):
 
 def test():
     print("Starting stand-alone test of Game_Master_Offline.py")
-    from src.game_types import TTT
-    import src.RandomPlayer as rand
-    import src.KInARow as bruh
+    from game_types import TTT
+    import RandomPlayer as rand
+    import KInARow as bruh
 
     set_game(TTT)
 

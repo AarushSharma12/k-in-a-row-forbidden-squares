@@ -1,5 +1,5 @@
 # Ignore the secrets file
-src/secrets.py
+src/app_secrets.py
 
 # Ignore Python cache files
 __pycache__/
