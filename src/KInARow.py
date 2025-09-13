@@ -14,9 +14,9 @@ import random
 import copy
 import time
 
-from agent_base import KAgent
-from game_types import State, Game_Type
-from winTesterForK import winTesterForK
+from src.agent_base import KAgent
+from src.game_types import State, Game_Type
+from src.winTesterForK import winTesterForK
 
 AUTHOR = "Aarush Sharma"
 
