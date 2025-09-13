@@ -1,109 +1,118 @@
-# K-in-a-Row with Forbidden Squares
+# K‑in‑a‑Row with Forbidden Squares
 
-A Python-based framework for running, experimenting with, and extending a K-in-a-Row game (similar to Tic-Tac-Toe or Connect Four variants). This project supports multiple agents (both naive and AI-based) and includes an offline game master. Originally developed as a course assignment at the University of Washington.
+![Python](https://img.shields.io/badge/python-3.9%2B-blue)
 
-## Features
+A Python framework for playing and experimenting with K‑in‑a‑Row games (e.g., Tic‑Tac‑Toe, 5‑in‑a‑Row) on boards that may include forbidden squares. It ships with multiple agents, an offline game master, optional HTML rendering, and an example AI agent with alpha‑beta pruning, move ordering, and Zobrist hashing.
 
-- **Game Master**  
-  Manages turn-taking, checks for wins, and controls the overall gameplay flow.
+## Why this is useful
 
-- **Multiple Agents**  
-  - **Random Player**: Makes random moves.  
-  - **Chaddington 'Bruh' Balding III** (Alpha-Beta + Zobrist agent): Demonstrates alpha-beta pruning, move ordering, and optional hashing.  
-  - **Template Agent Base**: A starting point (in `agent_base.py`) for building your own custom AI.
+- Pluggable agents: swap in different strategies quickly.
+- Multiple game types out of the box (TTT, 5‑in‑a‑Row with blocked corners, Cassini).
+- Clear entry points for search algorithms and heuristics.
+- Optional HTML export for quick visual game reviews.
+- Simple, dependency‑light code that’s easy to extend.
 
-- **Configurable Game Types**  
-  Play standard Tic-Tac-Toe (3-in-a-row), 5-in-a-row with forbidden corners, or new variants by adjusting the parameters.
+## Getting started
 
-- **HTML Output**  
-  Optionally export the game flow to an HTML file for easy visual reference.
+### Prerequisites
 
-## Directory & File Overview
+- Python 3.9+ recommended.
+- Optional (for dynamic utterances): `google-generativeai` and an API key.
 
-- **`agent_base.py`**  
-  Provides a base class `KAgent` that all agents can extend. Contains default stubs for `make_move`, `prepare`, `static_eval`, etc.
+### Clone and run a demo
 
-- **`Game_Master_Offline.py`**  
-  The main offline game controller. Runs the match between two agents, handles turn-taking, and declares a winner or draw.
+```bash
+# From repository root
+python src/Game_Master_Offline.py
+```
 
-- **`game_types.py`**  
-  Defines various game boards and rules (e.g., Tic-Tac-Toe `TTT`, Five-in-a-Row `FIAR`, Cassini, etc.). Each has:
-  - Dimensions (`n` x `m`)
-  - The value for K (how many in a row needed to win)
-  - An initial state definition
+This runs a demo Tic‑Tac‑Toe match: Bruh (alpha‑beta agent) vs Randy (random agent). The console prints the game, and an HTML report is created if enabled.
 
-- **`gameToHTML.py`**  
-  Provides logic to render the board states to an HTML file with images representing X, O, and forbidden squares.
+### Switch game types
 
-- **`RandomPlayer.py`**  
-  A simple example agent that picks moves uniformly at random.
+Edit or run code to choose the built‑in variants from `src/game_types.py`:
 
-- **`winTesterForK.py`**  
-  Contains a helper function to test if a given move creates a winning line of length K.
+- `TTT` (3 in a row)
+- `FIAR` (5 in a row on 7×7 with corners forbidden)
+- `Cassini` (5 in a row with a ring of forbidden squares)
 
- **`KInARow.py`**  
-  A more advanced agent demonstrating:
-  - Alpha-beta pruning
-  - Move ordering
-  - Zobrist hashing
-  - Basic persona-based text utterances
+Minimal example:
 
-## Agent Name and Persona  
-My agent is named **Chaddington "Bruh" Balding III**, an exaggerated "fratccent" character with loud, cocky, and party-centric speech. His persona includes references to seltzers, forced belches, and overconfidence in every utterance.
+```python
+# run_ttt.py (example)
+from game_types import TTT, FIAR, Cassini
+import KInARow as bruh
+import RandomPlayer as rand
+from Game_Master_Offline import set_game, set_players, runGame
 
-## The Twin Feature  
-Implemented a `twin` parameter in the constructor. If `twin=True`, the agent's name appends `"2"` or `"II"` to distinguish itself when playing against a duplicate instance.
+set_game(FIAR)  # choose TTT, FIAR, or Cassini
 
-## Alpha-Beta Pruning Implementation  
-Integrated into `minimax()` with `alpha` and `beta` parameters. When **β ≤ α** is detected, the search branch is pruned, reducing unnecessary evaluations.
+px = bruh.OurAgent()     # X = alpha-beta agent
+po = rand.OurAgent()     # O = random agent
 
-### **Performance Results (Depth=3)**  
-- **Baseline (No Ordering)**: ~3,000 static evaluations per turn.  
-- **With Alpha-Beta & Move Ordering**: Reduced evaluations by **30-40%**, averaging ~1,800-2,100.  
+set_players(px, po)
+runGame()
+```
 
-## Persona Details  
-The agent’s dialogue mimics an exaggerated frat bro stereotype. Speech includes slowed delivery, slurred words, burping, and bold overconfidence. Designed to be comedic or mildly irritating.
+### HTML output
 
-## Dialog Features for Game State Relevance  
-- **Move Coordinates**: Announces `(row, col)`.  
-- **Board Evaluation**: The agent boasts when winning, expresses uncertainty when losing, and remains casual otherwise.  
-- **Transitions**: Includes phrases like *"I’m just getting warmed up!"* when neutral and mocks the opponent when leading.  
+- Controlled by `USE_HTML` in `src/Game_Master_Offline.py` (default: True).
+- Output filename: `<X>-vs-<O>-in-<Game>-round-<n>.html`.
+- Uses images under `img/` (X, O, gray, black). Ensure that folder exists alongside the output.
 
-## Responsiveness to Opponent Remarks  
-The agent detects keywords in the opponent's speech:  
-- **"block" or "defense"** → Mocks opponent’s strategy.  
-- **"win"** → Declares itself the game’s future legend.  
-- **"Tell me how you did that"** → Provides a detailed statistical breakdown (**extra feature**).  
-- **"What’s your take on the game so far?"** → Gives a summary of the game and predicts the winner (**extra feature**).  
+### Optional LLM utterances
 
-## Dialog Development Process  
-1. **Prototype**: Simple random quips.  
-2. **State-Based Logic**: Integrated board evaluation.  
-3. **Keyword Detection**: Responses adjusted dynamically.  
-4. **Testing & Refinement**: Enhanced comedic tone while keeping speech concise.  
+The agent in `src/KInARow.py` can generate short, in‑character remarks using Gemini if enabled:
 
-## Extra Features  
+1. Install the SDK:
+   ```bash
+   pip install google-generativeai
+   ```
+2. Create `src/app_secrets.py` with:
+   ```python
+   GOOGLE_API_KEY = "YOUR_API_KEY"
+   ```
+   Make sure this file is git‑ignored (already covered in `.gitignore`).
+3. The agent will attempt LLM usage automatically and gracefully fall back if unavailable.
 
-### **1. Move Ordering**  
-Before recursion, moves are sorted based on `static_eval()`, prioritizing promising branches. This improves alpha-beta pruning efficiency.  
+## Usage examples
 
-### **2. Zobrist Hashing**  
-A 64-bit hash is computed for each board state to store and retrieve evaluations efficiently, reducing redundant computations.  
+- Run the offline game master demo:  
+  `python src/Game_Master_Offline.py`
 
-#### **Tracked metrics:**  
-- **Writes**: New evaluations stored.  
-- **Read Attempts**: Board states checked.  
-- **Hits**: Previously seen states retrieved.  
+- Use custom players:
 
-### **3. "Tell me how you did that" (Extra-Credit)**  
-When triggered by the opponent, the agent responds with:  
-- Number of static evaluations performed  
-- Alpha-beta cutoffs  
-- Move computation time  
-- Zobrist hashing stats  
+```python
+from game_types import TTT
+from Game_Master_Offline import set_game, set_players, runGame
+from RandomPlayer import OurAgent as RandomAgent
+from KInARow import OurAgent as BruhAgent
 
-### **4. "What’s your take on the game so far?" (Extra-Credit)**  
-Provides:  
-- A short narrative summary of the game  
-- Turn count reference  
-- A prediction on who might win based on `static_eval()`  
+set_game(TTT)
+set_players(BruhAgent(), RandomAgent())
+runGame()
+```
+
+- Implement your own agent by subclassing `KAgent` in `src/agent_base.py` and overriding:
+  - `prepare(...)`
+  - `make_move(state, last_utterance, time_limit)`
+  - (optional) `minimax(...)`, `static_eval(...)`
+
+
+## Maintainers
+
+- Maintainer: Aarush Sharma (author of `src/KInARow.py`)
+
+## Project structure
+
+```
+src/
+  agent_base.py            # Base class for agents
+  Game_Master_Offline.py   # Offline game master (entry point)
+  game_types.py            # Game variants and initial states
+  gameToHTML.py            # HTML report rendering
+  KInARow.py               # Alpha-beta + Zobrist agent ("Bruh")
+  RandomPlayer.py          # Baseline random agent
+  winTesterForK.py         # Win detection for K-in-a-row
+  app_secrets.py           # (optional, git-ignored) API key for LLM
+```
