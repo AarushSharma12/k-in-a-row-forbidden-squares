@@ -2,50 +2,58 @@
 
 ![Python](https://img.shields.io/badge/python-3.9%2B-blue)
 
-A Python framework for playing and experimenting with K‑in‑a‑Row games (e.g., Tic‑Tac‑Toe, 5‑in‑a‑Row) on boards that may include forbidden squares. It ships with multiple agents, an offline game master, optional HTML rendering, and an example AI agent with alpha‑beta pruning, move ordering, and Zobrist hashing.
+A Python framework for playing and experimenting with K‑in‑a‑Row games (e.g., Tic‑Tac‑Toe, 5‑in‑a‑Row) on boards that may include forbidden squares. It ships with multiple agents, an offline game master, optional HTML rendering, and an AI agent featuring alpha‑beta pruning, move ordering, and Zobrist hashing.
 
-## Why this is useful
+## Why This Is Useful
 
-- Pluggable agents: swap in different strategies quickly.
-- Multiple game types out of the box (TTT, 5‑in‑a‑Row with blocked corners, Cassini).
-- Clear entry points for search algorithms and heuristics.
-- Optional HTML export for quick visual game reviews.
-- Simple, dependency‑light code that’s easy to extend.
+- **Pluggable agents:** Swap in different strategies with minimal configuration.
+- **Multiple game variants:** TTT, 5‑in‑a‑Row with blocked corners, Cassini—ready out of the box.
+- **Extensible architecture:** Clear entry points for custom search algorithms and heuristics.
+- **HTML export:** Generate visual game reports for analysis and presentation.
+- **Lightweight dependencies:** Simple, dependency‑light code designed for easy extension.
 
-## Getting started
+## 🧠 AI Architecture
+
+The core agent (`KInARow.py`) implements a high-performance adversarial search engine:
+
+- **Minimax with Alpha-Beta Pruning:** Optimizes decision depth by pruning irrelevant branches.
+- **Iterative Deepening & Move Ordering:** Prioritizes promising moves (e.g., center control, winning threats) to maximize pruning efficiency.
+- **Zobrist Hashing:** Uses a Transposition Table to cache board states ($O(1)$ lookup), preventing redundant calculations for identical states reached via different move orders.
+- **LLM Integration:** Connects to Google's Gemini API to generate dynamic, persona-based commentary on the game state.
+
+## Getting Started
 
 ### Prerequisites
 
 - Python 3.9+ recommended.
 - Optional (for dynamic utterances): `google-generativeai` and an API key.
 
-### Clone and run a demo
+### Clone and Run
 
 ```bash
 # From repository root
 python src/Game_Master_Offline.py
 ```
 
-This runs a demo Tic‑Tac‑Toe match: Bruh (alpha‑beta agent) vs Randy (random agent). The console prints the game, and an HTML report is created if enabled.
+This launches a Tic‑Tac‑Toe match: Bruh (alpha‑beta agent) vs Randy (random agent). The console displays the game progression, and an HTML report is generated if enabled.
 
-### Switch game types
+### Switch Game Variants
 
-Edit or run code to choose the built‑in variants from `src/game_types.py`:
+Select from built‑in variants defined in `src/game_types.py`:
 
-- `TTT` (3 in a row)
-- `FIAR` (5 in a row on 7×7 with corners forbidden)
-- `Cassini` (5 in a row with a ring of forbidden squares)
+- `TTT` — 3 in a row
+- `FIAR` — 5 in a row on 7×7 with corners forbidden
+- `Cassini` — 5 in a row with a ring of forbidden squares
 
-Minimal example:
+Example:
 
 ```python
-# run_ttt.py (example)
 from game_types import TTT, FIAR, Cassini
 import KInARow as bruh
 import RandomPlayer as rand
 from Game_Master_Offline import set_game, set_players, runGame
 
-set_game(FIAR)  # choose TTT, FIAR, or Cassini
+set_game(FIAR)  # Options: TTT, FIAR, Cassini
 
 px = bruh.OurAgent()     # X = alpha-beta agent
 po = rand.OurAgent()     # O = random agent
@@ -54,33 +62,36 @@ set_players(px, po)
 runGame()
 ```
 
-### HTML output
+### HTML Output
 
-- Controlled by `USE_HTML` in `src/Game_Master_Offline.py` (default: True).
-- Output filename: `<X>-vs-<O>-in-<Game>-round-<n>.html`.
-- Uses images under `img/` (X, O, gray, black). Ensure that folder exists alongside the output.
+- Controlled by `USE_HTML` in `src/Game_Master_Offline.py` (default: `True`).
+- Output filename format: `<X>-vs-<O>-in-<Game>-round-<n>.html`.
+- Requires the `img/` directory (containing X, O, gray, black images) alongside the output.
 
-### Optional LLM utterances
+### LLM-Powered Utterances
 
-The agent in `src/KInARow.py` can generate short, in‑character remarks using Gemini if enabled:
+The agent in `src/KInARow.py` generates in‑character remarks using Google's Gemini API:
 
 1. Install the SDK:
    ```bash
    pip install google-generativeai
    ```
-2. Create `src/app_secrets.py` with:
+2. Create `src/app_secrets.py`:
    ```python
    GOOGLE_API_KEY = "YOUR_API_KEY"
    ```
-   Make sure this file is git‑ignored (already covered in `.gitignore`).
-3. The agent will attempt LLM usage automatically and gracefully fall back if unavailable.
+   This file is git‑ignored by default.
+3. The agent automatically attempts LLM integration and falls back gracefully if unavailable.
 
-## Usage examples
+## Usage Examples
 
-- Run the offline game master demo:  
-  `python src/Game_Master_Offline.py`
+**Run the offline game master:**
 
-- Use custom players:
+```bash
+python src/Game_Master_Offline.py
+```
+
+**Configure custom players:**
 
 ```python
 from game_types import TTT
@@ -93,22 +104,18 @@ set_players(BruhAgent(), RandomAgent())
 runGame()
 ```
 
-- Implement your own agent by subclassing `KAgent` in `src/agent_base.py` and overriding:
-  - `prepare(...)`
-  - `make_move(state, last_utterance, time_limit)`
-  - (optional) `minimax(...)`, `static_eval(...)`
+**Implement a custom agent** by subclassing `BaseGameAgent` in `src/agent_base.py` and overriding:
 
+- `prepare(...)`
+- `make_move(state, last_utterance, time_limit)`
+- (optional) `minimax(...)`, `static_eval(...)`
 
-## Maintainers
-
-- Maintainer: Aarush Sharma (author of `src/KInARow.py`)
-
-## Project structure
+## Project Structure
 
 ```
 src/
-  agent_base.py            # Base class for agents
-  Game_Master_Offline.py   # Offline game master (entry point)
+  agent_base.py            # Base class for agents (BaseGameAgent)
+  Game_Master_Offline.py   # Offline game engine (entry point)
   game_types.py            # Game variants and initial states
   gameToHTML.py            # HTML report rendering
   KInARow.py               # Alpha-beta + Zobrist agent ("Bruh")
@@ -116,3 +123,7 @@ src/
   winTesterForK.py         # Win detection for K-in-a-row
   app_secrets.py           # (optional, git-ignored) API key for LLM
 ```
+
+## Author
+
+**Aarush Sharma**

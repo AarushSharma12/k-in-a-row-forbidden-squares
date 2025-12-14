@@ -1,17 +1,14 @@
 """
-KInARow.py
-Author: Sharma, Aarush
+Bruh Agent - K-in-a-Row Game Playing Agent
 
-An agent for playing "K-in-a-Row with Forbidden Squares" and related games.
-This version implements the persona of Chaddington “Bruh” Balding III,
-with move ordering, Zobrist hashing, and two features:
-  1. If the opponent says "Tell me how you did that", the agent explains its search stats.
-  2. If the opponent says "What's your take on the game so far?", the agent tells a game narrative.
+A minimax-based agent with alpha-beta pruning for playing K-in-a-Row
+game variants. Features a distinctive "Bruh" personality.
+
+Author: Aarush Sharma
 """
 
-from agent_base import KAgent
-from game_types import State, Game_Type
-from winTesterForK import winTesterForK
+from agent_base import BaseGameAgent
+from winTesterForK import check_win_condition
 
 import math
 import random
@@ -21,7 +18,7 @@ import copy
 AUTHOR = "Aarush Sharma"
 
 
-class OurAgent(KAgent):
+class OurAgent(BaseGameAgent):
     def __init__(self, twin=False):
         self.twin = twin
         self.nickname = "Bruh"

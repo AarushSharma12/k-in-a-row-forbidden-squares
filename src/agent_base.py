@@ -1,121 +1,152 @@
-'''
-agent_base.py
+"""
+Base Game Agent Module
 
-Base class to be subclassed to create an agent for playing
-"K-in-a-Row with Forbidden Squares" and related games.
+Provides the abstract base class for all game-playing agents in the
+K-in-a-Row framework. Concrete implementations should inherit from
+BaseGameAgent and implement the required methods.
 
-Paul G. Allen School of Computer Science and Engineering,
-University of Washington
+Author: Aarush Sharma
+"""
+
+from abc import ABC, abstractmethod
 
 
-'''
+class BaseGameAgent(ABC):
+    """
+    Abstract base class for game-playing agents.
 
+    This class defines the interface that all game agents must implement.
+    It provides basic agent identification and requires subclasses to
+    implement the core game-playing logic.
 
-AUTHORS = 'Jane Smith and Laura Lee' # Override this in your agent file.
+    Attributes:
+        side: The player side this agent represents ('X' or 'O').
+        nickname: Short identifier for the agent.
+        long_name: Full descriptive name of the agent.
+        voice_synthesis_enabled: Whether to use text-to-speech for remarks.
+    """
 
-import time
+    def __init__(self):
+        """Initialize the base game agent with default values."""
+        self.side = None
+        self.nickname = ""
+        self.long_name = ""
+        self.voice_synthesis_enabled = False
 
-# Base class for all K-in-a-Row agents.
+    def introduce(self) -> str:
+        """
+        Return a string introducing this agent.
 
-class KAgent:
+        Returns:
+            str: A brief introduction message from this agent.
+        """
+        return f"I am {self.long_name}, a game-playing agent."
 
-    def __init__(self, twin=False):
-        self.twin=False
-        self.nickname = 'Nic'
-        if twin: self.nickname += '2'
-        self.long_name = 'Templatus Skeletus'
-        if twin: self.long_name += ' II'
-        self.persona = 'bland'
-        self.voice_info = {'Chrome': 10, 'Firefox': 2, 'other': 0}
-        self.playing = "don't know yet" # e.g., "X" or "O".
-        self.image = None
-        self.alpha_beta_cutoffs_this_turn = -1
-        self.num_static_evals_this_turn = -1
-        self.zobrist_table_num_entries_this_turn = -1
-        self.zobrist_table_num_hits_this_turn = -1
-        self.current_game_type = None
+    def set_side(self, side: str) -> None:
+        """
+        Set which side this agent plays.
 
-    def introduce(self):
-        intro = '\nMy name is Templatus Skeletus.\n'+\
-            '"An instructor" made me.\n'+\
-            'Somebody please turn me into a real game-playing agent!\n' 
-        return intro
+        Args:
+            side: The player identifier ('X' or 'O').
+        """
+        self.side = side
 
-    def nickname(self):
+    def get_nickname(self) -> str:
+        """
+        Get the agent's short name.
+
+        Returns:
+            str: The agent's nickname.
+        """
         return self.nickname
- 
-    # Receive and acknowledge information about the game from
-    # the game master:
-    def prepare(
-            self,
-            game_type,
-            what_side_to_play,
-            opponent_nickname,
-            expected_time_per_move = 0.1, # Time limits can be
-                                          # changed mid-game by the game master.
-            utterances_matter=True):      # If False, just return 'OK' for each utterance,
-                                          # or something simple and quick to compute
-                                          # and do not import any LLM or special APIs.
-                                          # During the tournament, this will be False..
-       # Save relevant information for this agent instance.
-        self.current_game_type = game_type
-        self.playing = what_side_to_play
-        self.opponent_nickname = opponent_nickname
-        self.expected_time_per_move = expected_time_per_move
-        self.utterances_matter = utterances_matter
-        return "OK"
-                
-    def make_move(self, current_state, current_remark, time_limit=1000,
-                  autograding=False, use_alpha_beta=True,
-                  use_zobrist_hashing=False, max_ply=3,
-                  special_static_eval_fn=None):
-        print("make_move has been called")
 
-        print("code to compute a good move should go here.")
-        # Here's a placeholder:
-        a_default_move = (0, 0) # This might be legal ONCE in a game,
-        # if the square is not forbidden or already occupied.
-    
-        new_state = current_state # This is not allowed, and even if
-        # it were allowed, the newState should be a deep COPY of the old.
-    
-        new_remark = "I need to think of something appropriate.\n" +\
-        "Well, I guess I can say that this move is probably illegal."
+    def get_long_name(self) -> str:
+        """
+        Get the agent's full name.
 
-        print("Returning from make_move")
-        if not autograding:
-            return [[a_default_move, new_state], new_remark]
-        
-        stats = [self.alpha_beta_cutoffs_this_turn,
-                 self.num_static_evals_this_turn,
-                 self.zobrist_table_num_entries_this_turn,
-                 self.zobrist_table_num_hits_this_turn]
-        
-        return [[a_default_move, new_state]+stats, new_remark]
+        Returns:
+            str: The agent's long descriptive name.
+        """
+        return self.long_name
 
-    # The main adversarial search function:
-    def minimax(
-            self,
-            state,
-            depth_remaining,
-            pruning=False,
-            alpha=None,
-            beta=None):
-        print("Calling minimax. We need to implement its body.")
+    @abstractmethod
+    def make_move(self, state, utterance_source: str = ""):
+        """
+        Determine and return the agent's next move.
 
-        default_score = 0 # Value of the passed-in state. Needs to be computed.
-    
-        return [default_score, "my own optional stuff", "more of my stuff"]
-        # Only the score is required here but other stuff can be returned
-        # in the list, after the score, in case you want to pass info
-        # back from recursive calls that might be used in your utterances,
-        # etc. 
- 
-    def static_eval(self, state, game_type=None):
-        print('calling static_eval. Its value needs to be computed!')
-        # Values should be higher when the states are better for X,
-        # lower when better for O.
-        return 0
- 
+        This method must be implemented by all concrete agent classes.
+        It should analyze the current game state and return a valid move.
 
-GAME_TYPE = None  # not known yet.
+        Args:
+            state: The current game state object.
+            utterance_source: Optional string containing opponent's last remark.
+
+        Returns:
+            A tuple containing:
+                - move: The chosen move as a list [row, col] or similar.
+                - new_state: The resulting state after the move.
+                - remark: A string comment about the move.
+
+        Raises:
+            NotImplementedError: If not overridden by subclass.
+        """
+        raise NotImplementedError("Subclasses must implement make_move()")
+
+    def minimax(self, state, depth_remaining: int, pruning: bool = False,
+                alpha: float = float('-inf'), beta: float = float('inf')):
+        """
+        Execute minimax search with optional alpha-beta pruning.
+
+        This method should be implemented by agents that use minimax-based
+        decision making. The base implementation raises NotImplementedError.
+
+        Args:
+            state: The current game state to evaluate.
+            depth_remaining: Maximum search depth from current position.
+            pruning: Whether to use alpha-beta pruning.
+            alpha: Alpha value for pruning (best value for maximizer).
+            beta: Beta value for pruning (best value for minimizer).
+
+        Returns:
+            A dictionary containing search results with keys such as:
+                - 'best_move': The optimal move found.
+                - 'best_value': The minimax value of the best move.
+                - 'nodes_expanded': Count of nodes examined.
+                - 'cutoffs': Count of pruning cutoffs (if pruning enabled).
+
+        Raises:
+            NotImplementedError: If not overridden by subclass.
+        """
+        raise NotImplementedError("Subclasses must implement minimax()")
+
+    def static_eval(self, state) -> float:
+        """
+        Evaluate the given state and return a heuristic score.
+
+        Positive values favor the maximizing player (typically 'X'),
+        negative values favor the minimizing player (typically 'O').
+
+        Args:
+            state: The game state to evaluate.
+
+        Returns:
+            float: The heuristic evaluation score.
+
+        Raises:
+            NotImplementedError: If not overridden by subclass.
+        """
+        raise NotImplementedError("Subclasses must implement static_eval()")
+
+    def generate_remark(self, state, move, value: float) -> str:
+        """
+        Generate a contextual remark about the current game situation.
+
+        Args:
+            state: The current game state.
+            move: The move being made.
+            value: The evaluated value of the position.
+
+        Returns:
+            str: A remark string, or empty string if no remark.
+        """
+        return ""
